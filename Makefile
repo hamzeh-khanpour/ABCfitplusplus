@@ -1,33 +1,41 @@
-CFLAGS=-fPIC
+CFLAGS=-fPIC -I include -Wall -pedantic
 VER=c++11
 CC=g++ -std=$(VER) $(CFLAGS)
 LIBNAME=libABCfit++.so
+SOURCES = $(wildcard src/*.cxx)
+INCLUDES = $(wildcard include/*.h)
+EXECUTABLES = $(patsubst examples/%.cxx,%,$(wildcard examples/*.cxx))
+.PHONY: library examples help
 
-.PHONY: library test help
-
-library: $(LIBNAME)
+library: build/$(LIBNAME)
 
 help:
 	@echo -----------------------------------------------------------------------
 	@echo HELP
 	@echo 
-	@echo   library : make shared library [default]
-	@echo	test    : compile and execute test cases from ABCclassesTest
-	@echo   clean   : remove temporary files
+	@echo   library     : make shared library [default]
+	@echo	examples    : compile and execute test cases from ABCclassesTest
+	@echo   clean       : remove temporary files
 	@echo -----------------------------------------------------------------------
 
-%.o: %.cxx %.h
-	$(CC) -c -o $@ $<
+build/%.o: src/%.cxx $(INCLUDES) | makethedir
+	$(CC) -c -o $@ $< 
 
-$(LIBNAME): $(patsubst %.cxx,%.o,$(wildcard *.cxx))
+makethedir:
+	@mkdir -p build
+
+build/$(LIBNAME): $(patsubst src/%.cxx,build/%.o,$(SOURCES))
 	$(CC) -shared -o $@ $^
 
-test: $(patsubst %.cxx,%.o,$(wildcard *.cxx))
-	mkdir -p test/bin/
-	$(CC) -o test/bin/test $^
-	test/bin/./test
+%: examples/%.cxx build/$(LIBNAME) 
+	$(CC) -o $@ $^ build/$(LIBNAME)
+
+examples: $(EXECUTABLES)
 
 clean:
-	rm -f $(LIBNAME)
-	rm -f *.o
-	rm -rf test
+	-rm build/$(LIBNAME)
+	-rm build/*.o 
+	-rm $(EXECUTABLES)
+
+mrpropre: clean 
+	-rm -r build
