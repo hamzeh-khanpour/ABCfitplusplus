@@ -1,6 +1,9 @@
 //Auxiliary functions useful for setting up constrained fit
 
 #include "CoordRepr.h"
+#include "PxPyPzE.h"
+#include "ABCD.h"
+#include "ParticleObject.h"
 #include <cmath>
 
 namespace ABCFit{
@@ -31,8 +34,8 @@ namespace ABCFit{
   //NOTE: paramtetrisation functions are unspecified user functions and can be made as detailed as required (e.g. energy/direction dependent)
   Coordinates CalculateParameters(Coordinates _reco, Coordinates _truth, CoordRepr* input_repr, CoordRepr* parametrisation_repr) {
     Coordinates result = {4,-10.0};
-    Coordinates ref = parametrisation_repr->InvTransform(input_repr->Transform(reco)); //Setup reference 
-    Coordinates MC  = input_repr->Transform(truth);
+    Coordinates ref = parametrisation_repr->InvTransform(input_repr->Transform(_reco)); //Setup reference 
+    Coordinates MC  = input_repr->Transform(_truth);
     for (unsigned int i=0; i<3; i++) {
       ref[i]=MC[i];
     }
@@ -40,7 +43,7 @@ namespace ABCFit{
     for (unsigned int i=0; i<3; i++) {
       result[i]=ref[i];
     }
-    result[3]=truth[3]-reco[3];
+    result[3]=_truth[3]-_reco[3];
     return result;
   }
 }

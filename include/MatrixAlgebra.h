@@ -76,7 +76,7 @@ double VectorMultiplication(Coordinates vector1, Coordinates vector2);
 Coordinates MatrixVectorMultiplication(Matrix matrix, Coordinates vector);
 Coordinates VectorMatrixMultiplication(Coordinates vector, Matrix matrix);
 Matrix MatrixMultiplication(Matrix matrix1, Matrix matrix2);
-Matrix Cofactor(Matrix *matrix, int row, int col);
+Matrix Cofactor(Matrix *matrix, unsigned int row, unsigned int col);
 double Determinant(Matrix *matrix);
 Matrix Adjoint(Matrix *matrix);
 Matrix InverseMatrix(Matrix *matrix);

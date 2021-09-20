@@ -38,7 +38,7 @@ namespace ABCFit{
   std::vector<Coordinates> PxPyPzM::Derivative(Coordinates p) {
     std::vector<Coordinates> result;
     Coordinates UnitVec (4,0.0);
-    for (int i=0; i<UnitVec.size();i++) {
+    for (unsigned int i=0; i<UnitVec.size();i++) {
       UnitVec[i]=1.0;
       result.push_back(UnitVec);
       UnitVec[i]=0.0;
@@ -49,7 +49,7 @@ namespace ABCFit{
   std::vector<Coordinates> PxPyPzM::InvDerivative(Coordinates p) {
     std::vector<Coordinates> result;
     Coordinates UnitVec (4,0.0);
-    for (int i=0; i<UnitVec.size();i++) {
+    for (unsigned int i=0; i<UnitVec.size();i++) {
       UnitVec[i]=1.0;
       result.push_back(UnitVec);
       UnitVec[i]=0.0;

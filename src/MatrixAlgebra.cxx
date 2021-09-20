@@ -27,7 +27,7 @@ namespace ABCFit{
   Coordinates MatrixAlgebra::ScaleVector(Coordinates vector, double scale) {
     Coordinates result;
     result.reserve(vector.size());
-    for (int i=0; i<vector.size(); i++) 
+    for (unsigned int i=0; i<vector.size(); i++) 
       result.push_back(vector.at(i)*scale);
     return result;
   }
@@ -35,7 +35,7 @@ namespace ABCFit{
   Matrix MatrixAlgebra::ScaleMatrix(Matrix matrix, double scale) {
     Matrix result;
     result.reserve(matrix.size());
-    for (int i=0;i<matrix.size();i++)
+    for (unsigned int i=0;i<matrix.size();i++)
       result.push_back(ScaleVector(matrix[i],scale));
     return result;
   }
@@ -44,7 +44,7 @@ namespace ABCFit{
     Coordinates result;
     if (vector1.size() != vector2.size()) return result;
     result.reserve(vector1.size());
-    for (int i=0; i<vector1.size(); i++) 
+    for (unsigned int i=0; i<vector1.size(); i++) 
       result.push_back(vector1.at(i)+scale*vector2.at(i));
     return result;
   }
@@ -54,7 +54,7 @@ namespace ABCFit{
     if (matrix1.size() != matrix2.size()) return result;
     if (matrix1.at(0).size() != matrix2.at(0).size()) return result;
     result.reserve(matrix1.size());
-    for (int i=0; i<matrix1.size(); i++)
+    for (unsigned int i=0; i<matrix1.size(); i++)
       result.push_back(VectorSum(matrix1.at(i),matrix2.at(i),scale));
     return result;
   }
@@ -62,7 +62,7 @@ namespace ABCFit{
   double MatrixAlgebra::VectorMultiplication(Coordinates vector1, Coordinates vector2){
     double result = 0.0;
     if (vector1.size() != vector2.size()) return std::nan("");
-    for (int i=0; i<vector1.size(); i++)
+    for (unsigned int i=0; i<vector1.size(); i++)
       result+=vector1.at(i)*vector2.at(i);
     return result;
   }
@@ -71,7 +71,7 @@ namespace ABCFit{
     if (matrix.at(0).size() != vector.size()) return Coordinates();
     Coordinates result(matrix.size(),0.0);
     
-    for (int i=0; i<matrix.size(); i++)
+    for (unsigned int i=0; i<matrix.size(); i++)
       result[i]=VectorMultiplication(matrix.at(i),vector);
     return result;
   }
@@ -81,10 +81,10 @@ namespace ABCFit{
     Coordinates result;
     result.reserve(matrix.at(0).size());
 
-    for (int i=0; i<matrix.at(0).size(); i++) {
+    for (unsigned int i=0; i<matrix.at(0).size(); i++) {
       Coordinates col;
       col.reserve(matrix.size());
-      for (int j=0; j<matrix.size(); j++)
+      for (unsigned int j=0; j<matrix.size(); j++)
         col.push_back(matrix[j][i]);
       result.push_back(VectorMultiplication(vector,col));
 
@@ -96,25 +96,25 @@ namespace ABCFit{
     if (matrix1.at(0).size() != matrix2.size()) return Matrix();
     Matrix result(matrix1.size(),Coordinates());
     
-    for (int i=0; i<matrix2.at(0).size(); i++) {
+    for (unsigned int i=0; i<matrix2.at(0).size(); i++) {
       Coordinates col;
-      for (int j=0; j<matrix2.size(); j++)
+      for (unsigned int j=0; j<matrix2.size(); j++)
 	col.push_back(matrix2[j][i]);
       col=MatrixVectorMultiplication(matrix1,col);
-      for (int j=0; j<col.size(); j++) result[j].push_back(col[j]);
+      for (unsigned int j=0; j<col.size(); j++) result[j].push_back(col[j]);
     }
     return result;
   }
   
-  Matrix MatrixAlgebra::Cofactor(Matrix* matrix, int row, int col) {
-    int size = matrix->size();
+  Matrix MatrixAlgebra::Cofactor(Matrix* matrix, unsigned int row, unsigned int col) {
+    unsigned int size = matrix->size();
     Matrix result;
     result.reserve(size);
     if (size < row || matrix->at(0).size() < col) return result;
-    for (int i = (row == 0 ? 1:0); i < size; (row == ++i ? i++:i)) {
+    for (unsigned int i = (row == 0 ? 1:0); i < size; (row == ++i ? i++:i)) {
       Coordinates coordinates;
       coordinates.reserve(size);
-      for (int j = (col == 0 ? 1:0); j < matrix->at(0).size(); (col == ++j ? j++:j))
+      for (unsigned int j = (col == 0 ? 1:0); j < matrix->at(0).size(); (col == ++j ? j++:j))
 	coordinates.push_back((*matrix)[i][j]); 
       result.push_back(coordinates);
     }
@@ -122,12 +122,12 @@ namespace ABCFit{
   }
   
   double MatrixAlgebra::Determinant(Matrix* matrix) {
-    int size = matrix->size();
+    unsigned int size = matrix->size();
     if (size != matrix->at(0).size()) return std::nan("");
     if (size == 1) return (*matrix)[0][0];
 
     double result = 0.0;
-    for (int i = 0; i < size; i++) {
+    for (unsigned int i = 0; i < size; i++) {
       Matrix coMatrix = Cofactor(matrix, 0, i);
       result += (((i)%2==0)? 1.0: -1.0) * (*matrix)[0][i] * Determinant(&coMatrix);
     }
@@ -135,15 +135,15 @@ namespace ABCFit{
   }
   
   Matrix MatrixAlgebra::Adjoint(Matrix* matrix) {
-    int size = matrix->size();
+    unsigned int size = matrix->size();
     Matrix result;
     result.reserve(size);
     if (size != matrix->at(0).size()) return result;
     if (size == 1) return Matrix(1,Coordinates(1,1.0));
-    for (int i = 0; i < size; i++) {
+    for (unsigned int i = 0; i < size; i++) {
       Coordinates coordinates;
       coordinates.reserve(size);
-      for (int j = 0; j < size; j++) {
+      for (unsigned int j = 0; j < size; j++) {
         Matrix coMatrix = Cofactor(matrix, j, i);
 	coordinates.push_back((((i+j)%2==0)? 1.0: -1.0)*Determinant(&coMatrix));
       }
@@ -157,7 +157,7 @@ namespace ABCFit{
     if (!std::isnormal(det)) return {{std::nan("")}};
     
     Matrix adj = Adjoint(matrix);
-    for (int i = 0; i < matrix->size(); i++) {
+    for (unsigned int i = 0; i < matrix->size(); i++) {
       std::transform(adj[i].begin(), adj[i].end(), adj[i].begin(), [&det](double& c){return c/det;});
       //result.push_back(std::transform(row.begin(), row.end(), row.begin(), [&det](double& c){return c/det;}));
     }
@@ -165,8 +165,8 @@ namespace ABCFit{
   }
 
   Matrix MatrixAlgebra::TransposeMatrix(Matrix matrix) {
-    int rowSize = matrix.size();
-    int colSize = matrix[0].size();
+    unsigned int rowSize = matrix.size();
+    unsigned int colSize = matrix[0].size();
     if (rowSize == 0 || colSize == 0) return matrix;
     Matrix result(colSize, Coordinates (rowSize, 0.0));
     for (unsigned int row=0; row<rowSize; row++)

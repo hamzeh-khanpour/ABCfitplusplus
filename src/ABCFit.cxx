@@ -26,9 +26,9 @@
 #include <numeric>
 #include <cmath>
 
-#define HACK
+//#define HACK
 namespace ABCFit{
-  FitResult::FitResult (std::vector<ParticleObject> _FittedParticles, double _chi2, int _Ndof, statuscode _status, unsigned int _Niter) : FittedParticles(_FittedParticles), chi2(_chi2), Ndof(_Ndof), status(_status), Niter(_Niter) {};
+  FitResult::FitResult (std::vector<ParticleObject> _FittedParticles, double _chi2, int _Ndof, statuscode _status, unsigned int _Niter) : FittedParticles(_FittedParticles), chi2(_chi2), Ndof(_Ndof), status(_status), Niter(_Niter) {}
 
   void FitResult::print(bool PrintParticles) {
     std::cout << "Status = " << status << std::endl;
@@ -46,13 +46,14 @@ namespace ABCFit{
   FitKernel::FitKernel(std::vector<CompositeConstraint> ListOfConstraints, unsigned int maxiter) : m_ListOfConstraints(ListOfConstraints), m_MaxIterations(maxiter) {
     if (!Initialize()) m_State = statuscode::InitiateFailure;
     else m_State = statuscode::Initiate;    
-  };
+  }
 
   FitResult FitKernel::Fit(unsigned int maxiter) {
     if (maxiter>0) m_MaxIterations=maxiter;
     FitResult result(std::vector<ParticleObject> {}, -99.0, -99, statuscode::Initiate, 0);
     Coordinates ExpectationValues;
     Coordinates UnmeasuredExpectationValues;
+    // Setup Chi2 parameter expectation values
     for (auto p : m_AllParticles) {
       if (!p->IsUnmeasured()) {
 	Coordinates ExpValues = p->GetParametrisation()->GetExpectation(p->GetCoordinates());
@@ -72,10 +73,7 @@ namespace ABCFit{
       m_State=statuscode::InconsistentExpectationValues;
       return result;
     }
-    if (m_NumberOfConstraintParameters>0) {
-      for (auto c : m_ListOfConstraints) 
-	if (c.HasProbDistFunc()) ExpectationValues.push_back(c.GetProbDistFunc()->ExpectationValue());
-    }
+    // Setup Chi2 parameter CovMtr
     m_Covariance = Matrix(m_NumberOfParameters+m_NumberOfConstraintParameters, Coordinates (m_NumberOfParameters+m_NumberOfConstraintParameters, 0.0));
     bool nondiag=false;
     unsigned int Nrow=0;
@@ -98,6 +96,12 @@ namespace ABCFit{
 	Nrow++;
       }
     }
+    // Special attention to "Constrain parameters" having a ProbDistFunc
+    if (m_NumberOfConstraintParameters>0) {
+      for (auto c : m_ListOfConstraints) 
+	if (c.HasProbDistFunc()) ExpectationValues.push_back(c.GetProbDistFunc()->ExpectationValue());
+    }
+    // Temporarely set "Constrain parameters" CovMtr to unit-mtr
     for (unsigned int i=m_NumberOfParameters; i<m_NumberOfParameters+m_NumberOfConstraintParameters; i++)
       m_Covariance[i][i]=1.0;
     //std::cout <<"v = "; MatrixAlgebra::print(m_Covariance);
@@ -112,12 +116,9 @@ namespace ABCFit{
       m_State=statuscode::NonInvertibleCovMatrix;
       return result;
     }
-    //Setting diagonal for constraint parameters to zero such that there is no contribution to chi2
+    //Set CovMtr for constraint parameters to zero such that there is no contribution to chi2
     for (unsigned int i=m_NumberOfParameters; i<m_NumberOfParameters+m_NumberOfConstraintParameters; i++)
       InverseCovariance[i][i]=0.0; 
-    //Setup of constraint pdf parameters
-
-    //Remember to save input particle object's momenta
     //Init Fitting Procedure
     m_ParameterValues=ExpectationValues;
     m_UnmeasuredParameterValues=UnmeasuredExpectationValues;
@@ -130,41 +131,30 @@ namespace ABCFit{
 	m_State=BAstate;
 	return result;
       }
+      // Update constrain parameter constributions
       if (m_NumberOfConstraintParameters>0) {
-	unsigned int NProbDist = 0;
+	unsigned int NProbDist=m_NumberOfParameters; 
 	for (unsigned int i=0; i<m_NumberOfConstraints; i++){
 	  if (m_ListOfConstraints[i].HasProbDistFunc()) {
-	    m_ConstraintValues[i]-=m_ParameterValues[m_NumberOfParameters+NProbDist]; //subtract ProbDist Parameter Value (initial value is most probable value)
+	    m_ConstraintValues[i]-=m_ListOfConstraints[i].GetProbDistFunc()->ConstrainValue(m_ParameterValues[NProbDist]); //subtract ProbDist Constrain Value
+	    //std::cout << "Gaus deriv = " << c.GetProbDistFunc()->DerivativeLog(m_ParameterValues[NProbDist]) << " Gaus 2nd deriv = " << c.GetProbDistFunc()->SecondDerivativeLog(m_ParameterValues[NProbDist]) << " param val = " << m_ParameterValues[NProbDist] << std::endl;
+	    m_Covariance[NProbDist][NProbDist] = 2.0/(m_ListOfConstraints[i].GetProbDistFunc()->SecondDerivativeLog(m_ParameterValues[NProbDist]));
 	    NProbDist++;
 	  }
 	}
       }
-      //compute global constrain fulfillment estimator
-      double constraintSq = std::inner_product( m_ConstraintValues.begin(),  m_ConstraintValues.end(),  m_ConstraintValues.begin(), 0.0);
-      if (m_NumberOfConstraintParameters>0) {
-	unsigned int NProbDist=m_NumberOfParameters; 
-	for (auto c : m_ListOfConstraints)
-	  if (c.HasProbDistFunc()) {
-#ifndef HACK
-	    ExpectationValues[NProbDist] = m_ParameterValues[NProbDist]; 
-#endif
-	    //std::cout << "Gaus deriv = " << c.GetProbDistFunc()->DerivativeLog(m_ParameterValues[NProbDist]) << " Gaus 2nd deriv = " << c.GetProbDistFunc()->SecondDerivativeLog(m_ParameterValues[NProbDist]) << " param val = " << m_ParameterValues[NProbDist] << std::endl;
-	    m_Covariance[NProbDist][NProbDist] = 2.0/(c.GetProbDistFunc()->SecondDerivativeLog(m_ParameterValues[NProbDist]));
-	    NProbDist++;
-	  }
-      } 
-      
-      //now start the tedious matrix calculations
-      
+      //
+      //Now start the long matrix calculations
       //Full calculation work with non diagonal matrix
-      
-      //compute vbt = V*B{T} FOR SPECIAL CASE
+      //
+      //First for the case with no unmeasured parameters
+      //compute vbt = V*B{T}
       Matrix vbt = MatrixAlgebra::MatrixMultiplication(m_Covariance,MatrixAlgebra::TransposeMatrix(m_Bmatrix));
       //std::cout <<"b = "; MatrixAlgebra::print(m_Bmatrix);
       //std::cout <<"a = "; MatrixAlgebra::print(m_Amatrix);
       //std::cout <<"v = "; MatrixAlgebra::print(m_Covariance);
       //std::cout <<"vbt = "; MatrixAlgebra::print(vbt);
-      //compute bvbt = B*VB{T}
+      //then compute bvbt = B*VB{T}
       Matrix bvbt = MatrixAlgebra::MatrixMultiplication(m_Bmatrix,vbt);
       //std::cout <<"bvbt = "; MatrixAlgebra::print(bvbt);
       //invert bvb{T}
@@ -177,12 +167,13 @@ namespace ABCFit{
       }
       //std::cout <<"Wb = "; MatrixAlgebra::print(Wb);
       //std::cout <<"Unit = "; MatrixAlgebra::print(MatrixAlgebra::MatrixMultiplication(Wb,bvbt));
-      //compute VB{T}(BVB{T})-1 
+      //compute VB{T}(BVB{T})^-1 
       m_vbtWb = MatrixAlgebra::MatrixMultiplication(vbt,Wb);
       //std::cout <<"vbtWb = "; MatrixAlgebra::print(m_vbtWb);
-      //Recalculate VB{T}(BVB{T})-1 to include unmeasured parameters
+      //
+      // Extend VB{T}(BVB{T})^-1 to include unmeasured parameters -- general case
       if (m_NumberOfFreeParameters>0) {
-	//compute WbA where Wb=(BVB{T})-1
+	//compute WbA where Wb=(BVB{T})^-1
 	Matrix WbA = MatrixAlgebra::MatrixMultiplication(Wb,m_Amatrix);
 	//std::cout <<"WbA = "; MatrixAlgebra::print(WbA);
 	//compute At = A{T} to be used several times
@@ -209,7 +200,8 @@ namespace ABCFit{
       //update parameters values for constraint parameters
 #ifndef HACK
       for (unsigned int i=0; i<m_NumberOfConstraintParameters; i++) {
-	m_ParameterValues[m_NumberOfParameters+i] = -(m_ListOfConstraints[m_HasProbDistFunc[i]].GetProbDistFunc()->DerivativeLog(m_ParameterValues[m_NumberOfParameters+i]))/(m_ListOfConstraints[m_HasProbDistFunc[i]].GetProbDistFunc()->SecondDerivativeLog(m_ParameterValues[m_NumberOfParameters+i]))+ExpectationValues[m_NumberOfParameters+i]; //matches sign convention & adding expectationvalues to cancel later in c vector calculation so that the reference value is zero for x0
+	ExpectationValues[m_NumberOfParameters+i] = m_ParameterValues[m_NumberOfParameters+i]-(m_ListOfConstraints[m_HasProbDistFunc[i]].GetProbDistFunc()->DerivativeLog(m_ParameterValues[m_NumberOfParameters+i]))/(m_ListOfConstraints[m_HasProbDistFunc[i]].GetProbDistFunc()->SecondDerivativeLog(m_ParameterValues[m_NumberOfParameters+i])); // adding parametervalues to cancel later in c vector calculation
+	//m_ParameterValues[m_NumberOfParameters+i] = -(m_ListOfConstraints[m_HasProbDistFunc[i]].GetProbDistFunc()->DerivativeLog(m_ParameterValues[m_NumberOfParameters+i]))/(m_ListOfConstraints[m_HasProbDistFunc[i]].GetProbDistFunc()->SecondDerivativeLog(m_ParameterValues[m_NumberOfParameters+i]))+ExpectationValues[m_NumberOfParameters+i]; //matches sign convention & adding expectationvalues to cancel later in c vector calculation so that the reference value is zero for x0
       }
 #endif
       //compute c(y{l}) = A(a(l)-a(0))+B(y{l}-y{0})-f{y{l}}
@@ -225,10 +217,10 @@ namespace ABCFit{
       //std::cout <<"c val = "; MatrixAlgebra::print(m_ConstraintValues);
       //update parameters values for constraint parameters 
 #ifndef HACK 
-      for (unsigned int i=0; i<m_NumberOfConstraintParameters; i++)
-	ExpectationValues[m_NumberOfParameters+i] =  m_ParameterValues[m_NumberOfParameters+i];
+      //for (unsigned int i=0; i<m_NumberOfConstraintParameters; i++)
+      //ExpectationValues[m_NumberOfParameters+i] =  m_ParameterValues[m_NumberOfParameters+i];
 #endif
-      //compute y{l+1} = y{0}+vb{T}(bvb{T})-1*c(y{l})
+      //compute delta_yy = y{l+1}-y{0} = vb{T}(bvb{T})^-1*c(y{l})
       m_ParameterValues = MatrixAlgebra::MatrixVectorMultiplication(m_vbtWb, cvector); //Delta ParamaterValues
       //std::cout <<"param val = "; MatrixAlgebra::print(m_ParameterValues);
       if (m_NumberOfFreeParameters>0) {
@@ -236,11 +228,12 @@ namespace ABCFit{
 	m_UnmeasuredParameterValues = MatrixAlgebra::VectorSum(UnmeasuredExpectationValues,MatrixAlgebra::MatrixVectorMultiplication(m_WAWB, cvector),1.0);
 	//std::cout <<"Unmeasured param val = "; MatrixAlgebra::print(m_UnmeasuredParameterValues); 
       }
-      //Compute chi2
+      //Compute chi2 for measured parameters
       chi2 = MatrixAlgebra::VectorMultiplication(m_ParameterValues,MatrixAlgebra::MatrixVectorMultiplication(InverseCovariance, m_ParameterValues)); //inverse covariance has zeros for constraint parameters! Only measured parameters in classic chi2
       //std::cout << "chi2 = " << chi2 << std::endl;
+      // finally compute y{l+1} = y{0} + delta_y
       m_ParameterValues = MatrixAlgebra::VectorSum(ExpectationValues,m_ParameterValues,1.0);
-      //Now add contribution from pdfs subtracting value at expectation point
+      //Now add contribution from Constrain parameters using pdfs and subtracting value at expectation point
       for (unsigned int i=0; i<m_HasProbDistFunc.size(); i++) {
 	ProbDistFunc* pdf = m_ListOfConstraints[m_HasProbDistFunc[i]].GetProbDistFunc();
 	chi2+=-2.0*log(pdf->Value(m_ParameterValues[m_NumberOfParameters+i]))+2.0*log(pdf->Value(pdf->ExpectationValue()));
@@ -257,6 +250,8 @@ namespace ABCFit{
 	    m_AllParticles[i]->UpdateCoordinates(Coordinates (m_ParameterValues.begin()+m_Particle2Index[i],m_ParameterValues.begin()+m_Particle2Index[i]+m_AllParticles[i]->NumberOfFreeParameters()));
 	}
       }
+      //compute global constrain fulfillment estimator
+      double constraintSq = std::inner_product( m_ConstraintValues.begin(),  m_ConstraintValues.end(),  m_ConstraintValues.begin(), 0.0);
       //Chi2 convergrence 
       double deltachi2 = abs(chi2-chi2min)/(chi2!=0.0 ? chi2 : 1.0);
       if (abs(deltachi2)<m_DeltaChiConvergence && constraintSq<m_ConstraintConvergence*m_ConstraintConvergence*double(m_NumberOfConstraints*m_NumberOfConstraints)) {
@@ -296,6 +291,7 @@ namespace ABCFit{
     //std::cout << "dpdParam = "; MatrixAlgebra::print(m_dpdParameters);
     //compute df/dp and constraint function distance
     Matrix dfdp(m_NumberOfConstraints, Coordinates (internalRepresentation->GetNumberOfParameters()*m_AllParticles.size()+m_NumberOfConstraintParameters,0.0));
+    //unsigned int NProbDist =0;
     for (unsigned int idx_con=0; idx_con<m_NumberOfConstraints; idx_con++) {
       m_ConstraintValues[idx_con] = (m_ListOfConstraints[idx_con].ConstraintFunction()-m_ListOfConstraints[idx_con].GetConstraintValue());
       //Warning: Fix for ProbDist Constraints -- has been fixed
@@ -339,14 +335,15 @@ namespace ABCFit{
     }
     if (Bcol!=m_NumberOfParameters || Acol!=m_NumberOfFreeParameters) return statuscode::InconsistentDerivativeMatrix;
     //Add constraint parameters
-    /*if (m_NumberOfConstraintParameters>0) {
-      for (unsigned int i=0; i<m_NumberOfConstraintParameters; i++) {
-	for (unsigned int row=0; row<BAmatrix.size(); row++)
-	  m_Bmatrix[row][Bcol] = BAmatrix[row][col];
-	Bcol++;
-	col++;
+    if (m_NumberOfConstraintParameters>0) {
+      col=0;
+      for (unsigned int i=0; i<m_NumberOfConstraints; i++) {
+	if (m_ListOfConstraints[i].HasProbDistFunc()) {
+	  m_Bmatrix[i][m_NumberOfParameters+col] = -m_ListOfConstraints[i].GetProbDistFunc()->ConstrainDerivative(m_ParameterValues[m_NumberOfParameters+m_NumberOfFreeParameters+col]); //sign convention for Probability dist value
+	  col++;
+	}
       }
-      } */
+    }
     return statuscode::success;
   }
   

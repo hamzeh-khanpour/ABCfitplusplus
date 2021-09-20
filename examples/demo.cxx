@@ -196,7 +196,7 @@ P_REC(4,5)=22.207         ! E
   */
 
   std::vector<ParticleObject*> WWParticleList;
-  for (int i=0; i<WWList.size(); i++) {
+  for (unsigned int i=0; i<WWList.size(); i++) {
     ParticleObject* po = new ParticleObject(WWList[i], pxpypze, abcd); //NOTE: all particles are assumed measured including the neutrino
     WWParticleList.push_back(po); 
     po->FixParameter(3); //Fix particle mass parameter
@@ -248,7 +248,7 @@ P_REC(4,5)=22.207         ! E
 
   //Now trying equal energy – should give same result
   //Let's start from scratch: Reset particle objects
-  for (int i=0; i<WWParticleList.size(); i++) {
+  for (unsigned int i=0; i<WWParticleList.size(); i++) {
     WWParticleList[i]->SetCoordinates(WWList[i]); //Setting coordinates in input representation
   }
 
@@ -337,7 +337,7 @@ P_REC(4,5)=22.207         ! E
   TopParticleList.push_back(new ParticleObject(TopList[4], pxpypze, abcdlfjet));
   TopParticleList.push_back(new ParticleObject(TopList[5], pxpypze, abcdlfjet));
   
-  for (int i=0; i<TopList.size(); i++) {
+  for (unsigned int i=0; i<TopList.size(); i++) {
     TopParticleList[i]->FixParameter(3); //Particles masses are kept fixed (in this example input particle masses are all zero)
   }
 

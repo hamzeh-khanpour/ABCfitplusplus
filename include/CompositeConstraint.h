@@ -53,7 +53,7 @@ private:
   double m_ConstraintValue;
   ProbDistFunc *m_ConstraintValueDist;
   bool CheckInput();
-  std::vector<int> m_Index;
+  std::vector<unsigned int> m_Index;
   // particle allocator
 };
 } // namespace ABCFit

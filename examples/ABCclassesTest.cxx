@@ -23,7 +23,7 @@
 #include "PxPyPzE.h"
 #include "PtEtaPhiM.h"
 #include "ABCD.h"
-#include "ABC.h"
+//#include "ABC.h"
 #include "MatrixAlgebra.h"
 #include "ParticleObject.h"
 //#include "ProbDistFunc.h"
@@ -411,12 +411,12 @@ P_REC(4,5)=22.207         ! E
      37.7875}
   };
   std::vector<ParticleObject*> ParticleList;
-  for (int i=0; i<List.size(); i++) {
+  for (unsigned int i=0; i<List.size(); i++) {
     ParticleObject* po = new ParticleObject(List[i], pxpypze, abcd); //saves ParticleObject (object) to the heap
     ParticleList.push_back(po); //pushes bak pointer to find ParticleObjects again on the heap
   }
   std::vector<ParticleObject*> abcfitParticleList;
-  for (int i=0; i<abcfitList.size(); i++) {
+  for (unsigned int i=0; i<abcfitList.size(); i++) {
     ParticleObject* po = new ParticleObject(abcfitList[i], pxpypze, abcd); //saves ParticleObject (object) to the heap
     abcfitParticleList.push_back(po); //pushes bak pointer to find ParticleObjects again on the heap
     po->FixParameter(3);
@@ -437,7 +437,7 @@ P_REC(4,5)=22.207         ! E
   TopParticleList.push_back(new ParticleObject(TopList[4], pxpypze, abcdlfjet));
   TopParticleList.push_back(new ParticleObject(TopList[5], pxpypze, abcdlfjet));
   
-  for (int i=0; i<TopList.size(); i++) {
+  for (unsigned int i=0; i<TopList.size(); i++) {
     TopParticleList[i]->FixParameter(3);    
   }
   

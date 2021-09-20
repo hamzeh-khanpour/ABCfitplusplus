@@ -37,7 +37,7 @@ namespace ABCFit{
     Coordinates sumvector(4,0.0);
     for (auto p: Particles) sumvector=MatrixAlgebra::VectorSum(sumvector,p);
     double m = sqrt(std::max(sumvector[3]*sumvector[3]-(sumvector[0]*sumvector[0]+sumvector[1]*sumvector[1]+sumvector[2]*sumvector[2]),0.0));
-    for (int i=0; i<result.size(); i+=4) {
+    for (unsigned int i=0; i<result.size(); i+=4) {
       result[i+0]=-sumvector[0]/m;
       result[i+1]=-sumvector[1]/m;
       result[i+2]=-sumvector[2]/m;

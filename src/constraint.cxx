@@ -24,9 +24,9 @@
 
 namespace ABCFit{
 
-  Constraint::Constraint(CoordRepr* CoordType, std::vector<ParticleObject*> ListOfParticles, double ConstraintValue) : m_CoordType(CoordType), m_ListOfParticles(ListOfParticles), m_ConstraintValue(ConstraintValue), m_ConstraintValueDist(NULL) {};
+  Constraint::Constraint(CoordRepr* CoordType, std::vector<ParticleObject*> ListOfParticles, double ConstraintValue) : m_CoordType(CoordType), m_ListOfParticles(ListOfParticles), m_ConstraintValue(ConstraintValue), m_ConstraintValueDist(NULL) {}
 
-  Constraint::Constraint(CoordRepr* CoordType, std::vector<ParticleObject*> ListOfParticles,  ProbDistFunc* ConstraintValueDist) : m_CoordType(CoordType), m_ListOfParticles(ListOfParticles), m_ConstraintValue(0.0), m_ConstraintValueDist(ConstraintValueDist) {};
+  Constraint::Constraint(CoordRepr* CoordType, std::vector<ParticleObject*> ListOfParticles,  ProbDistFunc* ConstraintValueDist) : m_CoordType(CoordType), m_ListOfParticles(ListOfParticles), m_ConstraintValue(0.0), m_ConstraintValueDist(ConstraintValueDist) {}
 
   std::vector<Coordinates> Constraint::GetParticleCoordinates() {
     std::vector<Coordinates> result;
@@ -41,7 +41,7 @@ namespace ABCFit{
     Coordinates result;
     Coordinates vector=ConstraintFunctionDerivative(); 
     //std::cout << "ConstraintInternalDerivative = "; MatrixAlgebra::print(vector); 
-    for (int i =0; i<m_ListOfParticles.size(); i++){
+    for (unsigned int i =0; i<m_ListOfParticles.size(); i++){
 	Coordinates singleparticlederiv = MatrixAlgebra::VectorMatrixMultiplication(Coordinates(vector.begin()+4*i,vector.begin()+4+4*i),m_CoordType->InvDerivative(m_ListOfParticles[i]->GetCoordinates()));
 	//std::cout << "Inv deriv = "; MatrixAlgebra::print(m_CoordType->InvDerivative(m_ListOfParticles[i]->GetCoordinates()));
       result.insert(result.end(), singleparticlederiv.begin(), singleparticlederiv.end());

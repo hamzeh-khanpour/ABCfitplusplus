@@ -25,9 +25,9 @@
 
 namespace ABCFit{
 
-  CompositeConstraint::CompositeConstraint(ListOfConstraints Constraints, double ConstraintValue) : m_ListOfConstraints(Constraints), m_ConstraintValue(ConstraintValue), m_ConstraintValueDist(NULL) {if (!CheckInput()) m_ListOfConstraints=ListOfConstraints();};
+  CompositeConstraint::CompositeConstraint(ListOfConstraints Constraints, double ConstraintValue) : m_ListOfConstraints(Constraints), m_ConstraintValue(ConstraintValue), m_ConstraintValueDist(NULL) {if (!CheckInput()) m_ListOfConstraints=ListOfConstraints();}
 
-  CompositeConstraint::CompositeConstraint(ListOfConstraints Constraints, ProbDistFunc* ConstraintValueDist) : m_ListOfConstraints(Constraints), m_ConstraintValue(0.0), m_ConstraintValueDist(ConstraintValueDist) {if (!CheckInput()) m_ListOfConstraints=ListOfConstraints();};
+  CompositeConstraint::CompositeConstraint(ListOfConstraints Constraints, ProbDistFunc* ConstraintValueDist) : m_ListOfConstraints(Constraints), m_ConstraintValue(0.0), m_ConstraintValueDist(ConstraintValueDist) {if (!CheckInput()) m_ListOfConstraints=ListOfConstraints();}
 
   double CompositeConstraint::ConstraintFunction() {
     double result = 0.0;

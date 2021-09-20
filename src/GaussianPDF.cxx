@@ -21,6 +21,6 @@
 #include "GaussianPDF.h"
 
 namespace ABCFit {
-  GaussianPDF::GaussianPDF(double mean, double sigma) : m_mean(mean), m_sigma(sigma) {};
+  GaussianPDF::GaussianPDF(double mean, double sigma) : m_mean(mean), m_sigma(sigma) {}
   
 }

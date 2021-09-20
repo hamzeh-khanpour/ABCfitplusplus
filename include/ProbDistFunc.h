@@ -28,13 +28,13 @@ class ProbDistFunc {
 public:
   ProbDistFunc(double stepsize = -1.0) : m_stepsize(stepsize){};
   virtual double Value(double x) = 0;
-  virtual double
-  ExpectationValue() = 0; // Most probable value used for chi2 contribution
+  virtual double ExpectationValue() = 0; // Most probable value used for chi2 contribution
+  virtual double ConstrainValue(double x) { return x; } // to allow coordinate transformation
+  virtual double ConstrainDerivative(double x) { return 1.0; } // to allow coordinate transformation  
   virtual double Derivative(double x);
   double DerivativeLog(double x); // Derivative of g(x)=-2log(PDF(x))
   virtual double SecondDerivative(double x);
-  double
-  SecondDerivativeLog(double x); // Second derivative of g(x)=-2log(PDF(x))
+  double SecondDerivativeLog(double x); // Second derivative of g(x)=-2log(PDF(x))
 private:
   double m_stepsize;
 };

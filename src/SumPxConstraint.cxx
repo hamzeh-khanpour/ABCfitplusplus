@@ -32,7 +32,7 @@ namespace ABCFit{
   Coordinates SumPxConstraint::ConstraintFunctionDerivative() {
     std::vector<Coordinates> Particles = GetParticleCoordinates();
     Coordinates result(4*Particles.size(),0.0);//Chosen parametrisation has four coordinates per particle 
-    for (int i=0; i<result.size(); i+=4) result[i]=1.0;
+    for (unsigned int i=0; i<result.size(); i+=4) result[i]=1.0;
     return result;
   }
 }
