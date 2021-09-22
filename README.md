@@ -21,7 +21,7 @@ make examples
 ```
 will create the executables `demo` and `ABCtestclasses`. The former can be consulted for inspiration.
 
-The employ in your own code You can use the shared library by pointing in your gcc command lines
+To employ in your own code, you can use the shared library by pointing in your g++ command lines
 `-I` and `-L` to this directory or generally `-I` to these header
 files and `-L` to the directory that the `libABCfit++.so` is
 located. Then supply also `-lABCfit++` to the command line arguments.
